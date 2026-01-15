@@ -1,0 +1,25 @@
+# Edition
+edition = "2024"
+
+# Ensure no hard tabs
+hard_tabs = false
+
+# Use Unix-style newlines
+newline_style = "Unix"
+
+# Limit lines to 120 characters
+max_width = 100
+
+# Use 4 spaces for tabs
+tab_spaces = 4
+
+# Set the function parameter layout
+fn_params_layout = "Vertical"
+
+# Reorder imports alphabetically
+reorder_imports = true
+
+# Multiline match arms should not add trailing commas
+match_block_trailing_comma = false
+
+
