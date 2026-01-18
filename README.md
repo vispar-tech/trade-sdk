@@ -1,54 +1,53 @@
-# bybit-sdk
+# trade-sdk
 
-High-performance async Bybit HTTP API client for Rust, built for extreme throughput with advanced session pooling and zero-lock caching.
+High-performance async trading API client for Rust supporting BingX and Bybit exchanges with intelligent session and cache management.
 
-## Architecture Overview
+## Architecture
 
-This SDK is structured for maximum performance and scalability:
+The library uses a sophisticated architecture for optimal performance:
 
 ### Session Management
 
-- **Shared Session Pool:**  
-  `SessionManager` sets up a *single, high-concurrency* `reqwest` client, reused across all API clients (`BybitClient`).  
-  *Best for production, bots, multi-account, or high load.*
-
-- **Individual Sessions:**  
-  If you don’t initialize `SessionManager`, each `BybitClient` builds its *own* client.  
-  ⚠️ *This is much slower and uses far more system resources.*  
-  *(See [benchmarks](#session-performance-benchmark) below.)*
-
-- **Connection Pooling:**  
-  The shared pool supports 2000+ concurrent connections (configurable for scale).
+- **Shared Session**: `SharedSessionManager` creates a single reqwest client with high-performance connection pooling
+- **Individual Sessions**: Clients automatically create individual clients if shared session isn't initialized
+- **Connection Pooling**: Up to 2000 concurrent connections with smart distribution per host
 
 ### Client Caching
 
-- **TTL Cache:**  
-  `ClientCache` stores constructed clients (by credentials) for 10 minutes by default.  
-  Clients are re-used and dropped automatically when stale.
+- **TTL Cache**: `BingxClientsCache` and `BybitClientsCache` cache client instances with 10-minute lifetime
+- **Lock-Free**: No blocking operations for maximum performance
+- **Lazy Cleanup**: Expired entries removed on access, not proactively
 
-- **Non-blocking, Lock-Free Reads:**  
-  Optimized for parallel access; fast inserts and O(1) lookups with minimal locking.
+#### Implemented methods
 
-- **Auto/Manual Cleanup:**  
-  Expired entries removed on demand, on access, or via background tasks.
-
----
-
-## Choosing a Strategy
-
-**If you handle many API keys (hundreds or thousands):**
-- **Always:**  
-  - Use `SessionManager` for a global session pool.
-  - Consider `ClientCache` if you have many repeated or rotating credential sets.
-
-- **Avoid:**  
-  - Don’t create new `BybitClient`s without pooling/caching in tight loops or under load — creation is up to 270x slower per instance.
-
-### TL;DR
-
-> *Shared session or caching is **critical** for high-load and multi-user apps. Individual sessions are for testing or rare/small scripts only.*
-
----
+```text
+BybitClient methods (18):
+    batch_cancel_order           get_order_history           
+    batch_place_order            get_position_info           
+    cancel_all_orders            get_server_time             
+    cancel_order                 get_wallet_balance          
+    get_account_info             place_order                 
+    get_closed_pnl               set_leverage                
+    get_instruments_info         set_margin_mode             
+    get_kline                    set_trading_stop            
+    get_open_and_closed_orders   switch_position_mode        
+BingxClient methods (30):
+    cancel_all_spot_open_orders                 get_spot_order_history                     
+    cancel_all_swap_open_orders                 get_spot_symbols_like                      
+    cancel_spot_batch_orders                    get_spot_trade_details                     
+    cancel_swap_batch_orders                    get_swap_contracts                         
+    change_swap_margin_type                     get_swap_klines                            
+    close_swap_position                         get_swap_leverage_and_available_positions  
+    get_account_asset_overview                  get_swap_margin_type                       
+    get_account_asset_overview                  get_swap_open_orders                       
+    get_api_permissions                         get_swap_order_details                     
+    get_server_time                             get_swap_order_history                     
+    get_spot_account_assets                     get_swap_position_history                  
+    get_spot_account_assets                     get_swap_position_mode                     
+    get_spot_klines                             place_swap_order                           
+    get_spot_open_orders                        set_swap_leverage                          
+    get_spot_order_details                      set_swap_position_mode 
+```
 
 ## Installation
 
@@ -56,216 +55,211 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bybit-sdk = "0.1"
+trade-sdk = "0.1.0"
 ```
 
----
+## Quick Start
 
-## Quick Examples
-
-### 1. Shared Session (RECOMMENDED for scale)
+### Option 1: Shared Session (Recommended for Production)
 
 ```rust
-use bybit_sdk::{SessionManager, BybitClient};
-use bybit_sdk::types::{AllCategory, AccountType}
+use trade_sdk::{SharedSessionManager, bybit::BybitClient, bingx::BingxClient};
 
 #[tokio::main]
-async fn main() -> bybit_sdk::Result<()> {
-    // 1. Initialize the shared reqwest client for the whole process (once at startup):
-    SessionManager::setup(2000);
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize shared session at startup (once per application)
+    SharedSessionManager::setup(2000);
 
-    // 2. All BybitClients now use the shared pool
-    let alice = BybitClient::new(
-        Some("key1".into()),
-        Some("secret1".into()),
-        false, // testnet
-        false, // demo
-        5000,
-        None,
+    // Create clients for different exchanges - they automatically use the shared session
+    let bybit = BybitClient::new(
+        Some("bybit_key".into()),
+        Some("bybit_secret".into()),
+        false, false, 5000, None,
+    )?;
+    let bingx = BingxClient::new(
+        Some("bingx_key".into()),
+        Some("bingx_secret".into()),
+        false, 5000,
     )?;
 
-    let bob = BybitClient::new(
-        Some("key2".into()),
-        Some("secret2".into()),
-        false,
-        false,
-        5000,
-        None,
-    )?;
+    // Use clients for API calls
+    let bybit_balance = bybit.get_wallet_balance(None, None).await?;
+    let bingx_time = bingx.get_server_time().await?;
 
-    // Use clients as normal
-    let ts = alice.get_server_time().await?;
-    let tickers = bob.get_tickers(AllCategory::Spot).await?;
-    let wallet = alice.get_wallet_balance(AccountType::Unified, Some("BTC")).await?;
+    println!("Bybit balance: {:?}", bybit_balance);
+    println!("BingX time: {:?}", bingx_time);
 
-    // 3. Gracefully close/cleanup the pool before exiting
-    SessionManager::close().await;
+    // Close shared session at shutdown
+    SharedSessionManager::close().await;
     Ok(())
 }
 ```
 
-#### Performance
-
-```
-100,000 clients:    ~50 ms
-Individual clients: ~13,600 ms   // (See [benchmarks](#session-performance-benchmark))
-```
-*A 270x speedup when using shared sessions!*
-
----
-
-### 2. Individual Sessions (Not for high-load/many users)
+### Option 2: Individual Sessions
 
 ```rust
-use bybit_sdk::BybitClient;
+use trade_sdk::{bybit::BybitClient, bingx::BingxClient};
 
 #[tokio::main]
-async fn main() -> bybit_sdk::Result<()> {
-    // This creates a new reqwest client each time (slow)
-    let client = BybitClient::new(
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Bybit client with individual session
+    let bybit = BybitClient::new(
         Some("your_key".into()),
         Some("your_secret".into()),
-        true,  // testnet
-        false, // demo
-        5000,
-        None,
+        false, false, 5000, None,
     )?;
+    let balance = bybit.get_wallet_balance(None, None).await?;
+    println!("Bybit balance: {:?}", balance);
 
-    let result = client.get_server_time().await?;
-    println!("{:?}", result);
+    // BingX client with individual session
+    let bingx = BingxClient::new(
+        Some("your_key".into()),
+        Some("your_secret".into()),
+        false, 5000,
+    )?;
+    let time = bingx.get_server_time().await?;
+    println!("BingX time: {:?}", time);
 
     Ok(())
 }
 ```
 
-⚠️ *Avoid for high-frequency or multi-account scenarios! Repeated construction is slow and will benefit hugely from SessionManager or BybitClientCache.*
-
----
-
-### 3. Cached Clients (Best for repeated credentials or stable credential pools)
+### Option 3: Cached Clients
 
 ```rust
-use bybit_sdk::{BybitClientCache, BybitClient};
+use trade_sdk::{BybitClientsCache, BingxClientsCache};
 
 #[tokio::main]
-async fn main() -> bybit_sdk::Result<()> {
-    // Get a cached client (or create and cache if missing)
-    let client = BybitClientCache::get_or_create(
-        "your_key".into(),
-        "your_secret".into(),
-        true,  // demo
-        false, // testnet
-        
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Get cached Bybit client (creates new if doesn't exist)
+    let bybit = BybitClientsCache::get_or_create(
+        Some("your_key".into()),
+        Some("your_secret".into()),
+        false, false, 5000, None,
     )?;
 
-    // Use the client as usual
-    let ts = client.get_server_time().await?;
-
-    // The same creds always return the same Arc<BybitClient>
-    let again = BybitClientCache::get_or_create(
-        "your_key".into(),
-        "your_secret".into(),
-        true, // demo
-        false // testnet
+    // Get cached BingX client
+    let bingx = BingxClientsCache::get_or_create(
+        Some("your_key".into()),
+        Some("your_secret".into()),
+        false, 5000,
     )?;
 
-    assert!(Arc::ptr_eq(&client, &again));
+    // Use clients (session management is automatic)
+    let balance = bybit.get_wallet_balance(None, None).await?;
+    let time = bingx.get_server_time().await?;
+
+    println!("Bybit balance: {:?}", balance);
+    println!("BingX time: {:?}", time);
 
     Ok(())
 }
 ```
 
-#### Cache TTL & Cleanup
+## Session Behavior
 
-```rust
-use bybit_sdk::BybitClientCache;
-
-// Set cache TTL to 30 minutes (1800 secs)
-BybitClientCache::configure(1800);
-
-// (Optional) Start automatic eviction in a background task (every 5 min)
-let cleanup_task = BybitClientCache::create_cleanup_task(300);
-
-// Manual (immediate) cleanup is also supported
-let removed = BybitClientCache::cleanup_expired();
-```
-
----
-
-## Session Behavior Matrix
-
-| Scenario                         | What happens?            | Session Type         |
-|-----------------------------------|--------------------------|----------------------|
-| `SessionManager::setup()` called  | All clients share pool   | Shared session       |
-| No shared session initialized     | Each client is unique    | Individual session   |
-| Using ClientCache                 | Depends on pool status   | Pooled or unique     |
-
----
-
-## Session Performance Benchmark
-
-100,000 client creation, single-threaded:
-
-```text
-Scenario               | Total Time (ms) | Per-Client (ms) | Clients/sec
------------------------|-----------------|-----------------|-------------
-Shared session         |          50.51  |        0.0005   | 1,979,796.2
-Individual sessions    |       13665.66  |        0.1367   |     7,317.6
-```
-
-**Summary:**  
-- Shared: **~270x faster** than repeated instantiation.
-- Always use pooling and/or caching for scale!
-
-Micro-benchmark (smaller runs):
-
-```
-BybitClient::new()        ...   17.19 ms
-Cache::get_or_create()    ...    0.99 ms
-SessionManager + new()    ...    0.00x ms
-```
-
----
-
-## Cache Performance Benchmark
-
-10,000 clients (see `tests/test_cache.rs`):
-
-```text
-Scenario                         | Time (ms)
-----------------------------------|-----------
-cache_get (warm)                  |    17.00
-cache_get_gather                  |    21.90
-cache_get_or_create (cold/miss)   |  1163.49
-cache_get_or_create_gather        |  1164.89
-direct_creation_gather            |  1205.59
-direct_creation                   |  1296.62
-```
-
-- *Warm cache gets are sub-millisecond per client.*
-- Hot cache is best for repeat access; cold cache and fresh creation are slower.
-
----
+| Scenario                              | Session Type              | When Used              |
+| ------------------------------------- | ------------------------- | ---------------------- |
+| `SharedSessionManager::setup()` called | Shared session            | All clients            |
+| No shared session initialized         | Individual session        | Each client            |
+| Cached clients                        | Depends on initialization | Cached per credentials |
 
 ## Cache Features
 
-- **Configure TTL:** Default is 10 min, settable via `ClientCache::configure(ttl_secs)`
-- **Memory Bloat Protection:** Expired clients are cleaned automatically or on schedule.
-- **Lock-Free Maximized Reads:** Zero contention on lookups.
-- **Background Sweeps:** Optionally run a task to purge stale clients on interval.
+- **Automatic TTL**: 10 minutes default, configurable
+- **Memory Safe**: Prevents client accumulation
+- **High Performance**: Lock-free operations
+- **Lazy Cleanup**: Expired entries removed on access, not proactively
 
----
+```rust
+// Configure cache lifetime for each exchange
+BybitClientsCache::configure_lifetime(std::time::Duration::from_secs(1800)); // 30 minutes
+BingxClientsCache::configure_lifetime(std::time::Duration::from_secs(1800)); // 30 minutes
+
+// Manual cleanup
+let bybit_removed = BybitClientsCache::cleanup_expired();
+let bingx_removed = BingxClientsCache::cleanup_expired();
+```
+
+## API Methods
+
+### Bybit Client Methods
+
+```rust
+use trade_sdk::bybit::BybitClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = BybitClient::new(
+        Some("your_key".into()),
+        Some("your_secret".into()),
+        false, false, 5000, None,
+    )?;
+
+    // Market data
+    let server_time = client.get_server_time().await?;
+    let instruments = client.get_instruments_info(
+        trade_sdk::bybit::AllCategories::Spot,
+        None, None, None, None, None, None,
+    ).await?;
+    let klines = client.get_kline(
+        "BTCUSDT", "1h", Some(&trade_sdk::bybit::AllCategories::Linear),
+        None, None, None,
+    ).await?;
+
+    // Account
+    let balance = client.get_wallet_balance(
+        Some(trade_sdk::bybit::AccountType::Unified),
+        Some("BTC"),
+    ).await?;
+    let account_info = client.get_account_info().await?;
+
+    // Trading
+    let margin_result = client.set_margin_mode(
+        trade_sdk::bybit::MarginMode::IsolatedMargin
+    ).await?;
+
+    println!("Server time: {:?}", server_time);
+    println!("Balance: {:?}", balance);
+
+    Ok(())
+}
+```
+
+### BingX Client Methods
+
+```rust
+use trade_sdk::bingx::BingxClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = BingxClient::new(
+        Some("your_key".into()),
+        Some("your_secret".into()),
+        false, 5000,
+    )?;
+
+    // Server time
+    let time = client.get_server_time().await?;
+    println!("Server time: {:?}", time);
+
+    Ok(())
+}
+```
 
 ## Requirements
 
--   Rust >= 1.70
--   `tokio` async runtime
--   (Production: Use session pooling for best performance)
+- Rust stable (`1.70+`)
+- `tokio`
+- High-performance connection pooling for production use
 
 ## Performance Tips
 
-1. **Always use a shared session** (`SessionManager`) for throughput/multi-account.
-2. **Use `ClientCache`** if you have repeated or rotating credentials.
-3. **Tune the connection pool** (`SessionManager::setup(pool_size)`).
-4. **Background cleanup** (`ClientCache::create_cleanup_task`) prevents cache bloat.
+1. **Use Shared Session** for applications creating many clients
+2. **Enable Caching** for repeated API credential usage
+3. **Configure Connection Limits** based on your throughput needs
 
+## Dev/TODO
+
+- Remove null params in order (serde_json) serialization
+- Improve granular error handling in all API abstractions

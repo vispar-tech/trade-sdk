@@ -1,9 +1,9 @@
 [package]
-name = "bybit-sdk"
+name = "trade-sdk"
 version = "0.1.0"
 edition = "2021"
 authors = ["Daniil Pavlovich <layred.dota2@mail.ru>"]
-description = "High-performance async Bybit API client for Rust with intelligent session and cache management"
+description = "High-performance async trading API client for Rust"
 readme = "README.md"
 
 [dependencies]
@@ -25,6 +25,10 @@ once_cell = "1.19"
 async-trait = "0.1"
 # Logging
 log = "0.4"
+# URL encoding
+urlencoding = "2.1"
+percent-encoding = "2.3.2"
+linkme = "0.3.35"
 
 [dev-dependencies]
 # Testing
@@ -32,4 +36,4 @@ tokio-test = "0.4"
 futures = "0.3"
 dotenv = "0.15"
 # Logging for tests
-env_logger = "0.10"
+env_logger = "0.11.8"

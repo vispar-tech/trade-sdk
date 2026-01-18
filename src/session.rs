@@ -1,4 +1,4 @@
-//! High-performance session management for Bybit API clients.
+//! High-performance session management for trading API clients.
 
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -6,18 +6,18 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
-static SESSION_MANAGER: Lazy<RwLock<Option<BybitSessionManager>>> = Lazy::new(|| RwLock::new(None));
+static SHARED_SESSION_MANAGER: Lazy<RwLock<Option<SharedSessionManager>>> = Lazy::new(|| RwLock::new(None));
 static SESSION_INITIALIZED: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
 
 /// Manager for shared reqwest client with high-performance connection pool.
 ///
-/// Equivalent to BybitSessionManager in Python version.
-pub struct BybitSessionManager {
+/// Equivalent to SharedSessionManager in Python version.
+pub struct SharedSessionManager {
     client: Arc<Client>,
     max_connections: usize,
 }
 
-impl BybitSessionManager {
+impl SharedSessionManager {
     /// Initialize shared session with high-performance connection pool.
     ///
     /// Call this once at application startup.
@@ -31,7 +31,7 @@ impl BybitSessionManager {
             return;
         }
 
-        let mut manager = SESSION_MANAGER.write().unwrap();
+        let mut manager = SHARED_SESSION_MANAGER.write().unwrap();
 
         if manager.is_some() {
             log::warn!("Session already initialized - skipping setup");
@@ -39,7 +39,7 @@ impl BybitSessionManager {
         }
 
         log::info!(
-            "Initializing Bybit session with {} max connections",
+            "Initializing shared session with {} max connections",
             max_connections
         );
 
@@ -54,7 +54,7 @@ impl BybitSessionManager {
             .timeout(Duration::from_secs(30))
             // HTTP/1.1 for compatibility with aiohttp
             .http1_only()
-            .user_agent("bybit-sdk/0.1.0")
+            .user_agent("trade-sdk/0.1.0")
             // Default headers - same as Python
             .default_headers({
                 let mut headers = reqwest::header::HeaderMap::new();
@@ -67,7 +67,7 @@ impl BybitSessionManager {
             .build()
             .expect("Failed to create HTTP client");
 
-        *manager = Some(BybitSessionManager {
+        *manager = Some(SharedSessionManager {
             client: Arc::new(client),
             max_connections,
         });
@@ -75,7 +75,7 @@ impl BybitSessionManager {
         // Mark as initialized atomically
         SESSION_INITIALIZED.store(true, Ordering::Release);
 
-        log::info!("✅ Bybit session initialized with maximum performance settings");
+        log::info!("✅ Shared session initialized with maximum performance settings");
     }
 
     /// Check if shared session is initialized and active.
@@ -93,14 +93,14 @@ impl BybitSessionManager {
         }
 
         // RwLock read - allows multiple concurrent readers
-        if let Ok(manager) = SESSION_MANAGER.read() {
+        if let Ok(manager) = SHARED_SESSION_MANAGER.read() {
             if let Some(ref session) = *manager {
                 return Arc::clone(&session.client);
             }
         }
 
         // Fallback with write lock if read failed
-        SESSION_MANAGER
+        SHARED_SESSION_MANAGER
             .write()
             .unwrap()
             .as_ref()
@@ -120,20 +120,20 @@ impl BybitSessionManager {
 
         // Scope for the manager lock to ensure it's dropped before await
         let should_wait = {
-            let mut manager = SESSION_MANAGER.write().unwrap();
+            let mut manager = SHARED_SESSION_MANAGER.write().unwrap();
             manager.take().is_some()
         };
         if should_wait {
-            log::info!("Closing Bybit shared session gracefully");
+            log::info!("Closing shared session gracefully");
             // Give time for pending requests to complete
             tokio::time::sleep(Duration::from_millis(200)).await;
-            log::info!("✅ Bybit session closed successfully");
+            log::info!("✅ Shared session closed successfully");
         }
     }
 
     /// Get maximum connections setting
     pub fn max_connections() -> usize {
-        if let Ok(manager) = SESSION_MANAGER.read() {
+        if let Ok(manager) = SHARED_SESSION_MANAGER.read() {
             if let Some(ref session) = *manager {
                 return session.max_connections;
             }

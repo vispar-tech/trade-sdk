@@ -1,6 +1,6 @@
-//! # bybit-sdk
+//! # trade-sdk
 //!
-//! High-performance async Bybit API client for Rust with intelligent session and cache management.
+//! High-performance async trading API client for Rust with intelligent session and cache management.
 //!
 //! ## Architecture
 //!
@@ -19,15 +19,15 @@
 //! - **Lazy Cleanup**: Expired entries removed on access, not proactively
 
 #![allow(clippy::too_many_arguments)]
-pub mod api;
-pub mod cache;
-pub mod client;
-pub mod error;
-pub mod http;
-pub mod session;
-pub mod traits;
-pub mod types;
+mod caches;
+mod clients;
+mod error;
+mod http;
+mod session;
+mod utils;
 
-pub use cache::BybitClientCache;
-pub use client::BybitClient;
-pub use session::BybitSessionManager;
+pub use caches::{BybitClientsCache, ClientsCache};
+pub use session::SharedSessionManager;
+
+pub use clients::bingx;
+pub use clients::bybit;
