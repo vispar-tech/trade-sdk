@@ -11,7 +11,6 @@ use linkme::distributed_slice;
 #[distributed_slice]
 pub static BINGX_IMPLEMENTED: [&'static str];
 
-
 /// Bybit Trading API Client with all available methods.
 pub struct BingxClient {
     http_client: BingxHttpClient,

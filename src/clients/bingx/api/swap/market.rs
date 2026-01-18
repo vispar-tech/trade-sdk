@@ -1,13 +1,13 @@
 use crate::bingx::traits::swap::MarketApi;
 use crate::bingx::types::ApiResponse;
 use crate::bingx::BingxClient;
+use crate::bingx::BINGX_IMPLEMENTED;
 use crate::error::Result;
 use crate::http::HttpClient;
 use async_trait::async_trait;
+use linkme::distributed_slice;
 use serde_json::Value;
 use std::collections::HashMap;
-use linkme::distributed_slice;
-use crate::bingx::BINGX_IMPLEMENTED;
 
 #[distributed_slice(BINGX_IMPLEMENTED)]
 static GET_SWAP_CONTRACTS: &str = "get_swap_contracts";

@@ -1,6 +1,8 @@
-use async_trait::async_trait;
-use crate::bingx::types::{ApiResponse, MarginMode, PlaceSwapOrderParams, PositionSide, QuoteCurrency, SwapOrderType};
+use crate::bingx::types::{
+    ApiResponse, MarginMode, PlaceSwapOrderParams, PositionSide, QuoteCurrency, SwapOrderType,
+};
 use crate::error::Result;
+use async_trait::async_trait;
 
 /// Trading methods for BingX swap API client.
 ///
@@ -218,9 +220,7 @@ pub trait TradeApi {
     /// - UID rate limit: 2/sec per UID.
     /// - Signature required.
     /// - Supported for master and sub accounts.
-    async fn get_swap_position_mode(
-        &self,
-    ) -> Result<ApiResponse<serde_json::Value>>;
+    async fn get_swap_position_mode(&self) -> Result<ApiResponse<serde_json::Value>>;
 
     /// Query leverage and available positions for the contract symbol.
     ///

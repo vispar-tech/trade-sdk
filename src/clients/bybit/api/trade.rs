@@ -38,7 +38,6 @@ pub static BATCH_PLACE_ORDER: &'static str = "batch_place_order";
 #[distributed_slice(BYBIT_IMPLEMENTED)]
 pub static BATCH_CANCEL_ORDER: &'static str = "batch_cancel_order";
 
-
 /// Default implementation of TradeApi for BybitClient
 #[async_trait]
 impl TradeApi for BybitClient {
@@ -50,10 +49,7 @@ impl TradeApi for BybitClient {
         let mut api_params: HashMap<String, Value> = HashMap::new();
 
         // Add category as a string value (Value)
-        api_params.insert(
-            "category".to_string(),
-            Value::String(category.to_string()),
-        );
+        api_params.insert("category".to_string(), Value::String(category.to_string()));
 
         // Add all non-null parameters from PlaceOrderParams
         let json_value = serde_json::to_value(params)?;
@@ -86,20 +82,11 @@ impl TradeApi for BybitClient {
         }
 
         let mut api_params: HashMap<String, Value> = HashMap::new();
-        api_params.insert(
-            "category".to_string(),
-            Value::String(category.to_string()),
-        );
-        api_params.insert(
-            "symbol".to_string(),
-            Value::String(symbol.to_string()),
-        );
+        api_params.insert("category".to_string(), Value::String(category.to_string()));
+        api_params.insert("symbol".to_string(), Value::String(symbol.to_string()));
 
         if let Some(order_id) = order_id {
-            api_params.insert(
-                "orderId".to_string(),
-                Value::String(order_id.to_string()),
-            );
+            api_params.insert("orderId".to_string(), Value::String(order_id.to_string()));
         }
         if let Some(order_link_id) = order_link_id {
             api_params.insert(
@@ -134,22 +121,13 @@ impl TradeApi for BybitClient {
         cursor: Option<&str>,
     ) -> Result<ApiResponse<Value>> {
         let mut api_params: HashMap<String, Value> = HashMap::new();
-        api_params.insert(
-            "category".to_string(),
-            Value::String(category.to_string()),
-        );
+        api_params.insert("category".to_string(), Value::String(category.to_string()));
 
         if let Some(symbol) = symbol {
-            api_params.insert(
-                "symbol".to_string(),
-                Value::String(symbol.to_string()),
-            );
+            api_params.insert("symbol".to_string(), Value::String(symbol.to_string()));
         }
         if let Some(base_coin) = base_coin {
-            api_params.insert(
-                "baseCoin".to_string(),
-                Value::String(base_coin.to_string()),
-            );
+            api_params.insert("baseCoin".to_string(), Value::String(base_coin.to_string()));
         }
         if let Some(settle_coin) = settle_coin {
             api_params.insert(
@@ -158,10 +136,7 @@ impl TradeApi for BybitClient {
             );
         }
         if let Some(order_id) = order_id {
-            api_params.insert(
-                "orderId".to_string(),
-                Value::String(order_id.to_string()),
-            );
+            api_params.insert("orderId".to_string(), Value::String(order_id.to_string()));
         }
         if let Some(order_link_id) = order_link_id {
             api_params.insert(
@@ -170,10 +145,7 @@ impl TradeApi for BybitClient {
             );
         }
         if let Some(open_only) = open_only {
-            api_params.insert(
-                "openOnly".to_string(),
-                Value::Bool(open_only),
-            );
+            api_params.insert("openOnly".to_string(), Value::Bool(open_only));
         }
         if let Some(order_filter) = order_filter {
             api_params.insert(
@@ -182,16 +154,10 @@ impl TradeApi for BybitClient {
             );
         }
         if let Some(limit) = limit {
-            api_params.insert(
-                "limit".to_string(),
-                Value::Number(limit.into()),
-            );
+            api_params.insert("limit".to_string(), Value::Number(limit.into()));
         }
         if let Some(cursor) = cursor {
-            api_params.insert(
-                "cursor".to_string(),
-                Value::String(cursor.to_string()),
-            );
+            api_params.insert("cursor".to_string(), Value::String(cursor.to_string()));
         }
 
         let response = self
@@ -231,22 +197,13 @@ impl TradeApi for BybitClient {
         }
 
         let mut api_params = HashMap::new();
-        api_params.insert(
-            "category".to_string(),
-            Value::String(category.to_string()),
-        );
+        api_params.insert("category".to_string(), Value::String(category.to_string()));
 
         if let Some(symbol) = symbol {
-            api_params.insert(
-                "symbol".to_string(),
-                Value::String(symbol.to_string()),
-            );
+            api_params.insert("symbol".to_string(), Value::String(symbol.to_string()));
         }
         if let Some(base_coin) = base_coin {
-            api_params.insert(
-                "baseCoin".to_string(),
-                Value::String(base_coin.to_string()),
-            );
+            api_params.insert("baseCoin".to_string(), Value::String(base_coin.to_string()));
         }
         if let Some(settle_coin) = settle_coin {
             api_params.insert(

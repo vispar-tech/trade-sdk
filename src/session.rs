@@ -6,7 +6,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
-static SHARED_SESSION_MANAGER: Lazy<RwLock<Option<SharedSessionManager>>> = Lazy::new(|| RwLock::new(None));
+static SHARED_SESSION_MANAGER: Lazy<RwLock<Option<SharedSessionManager>>> =
+    Lazy::new(|| RwLock::new(None));
 static SESSION_INITIALIZED: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(false));
 
 /// Manager for shared reqwest client with high-performance connection pool.

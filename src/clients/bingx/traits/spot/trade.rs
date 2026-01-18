@@ -23,7 +23,6 @@ pub trait TradeApi {
         order_type: Option<SpotOrderType>,
     ) -> Result<ApiResponse<serde_json::Value>>;
 
-
     /// Query order details for BingX spot trading.
     ///
     /// Endpoint: GET /openApi/spot/v1/trade/query
@@ -126,5 +125,4 @@ pub trait TradeApi {
         &self,
         symbol: Option<&str>,
     ) -> Result<ApiResponse<serde_json::Value>>;
-
 }

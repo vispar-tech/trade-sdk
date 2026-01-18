@@ -7,4 +7,3 @@ mod wallet;
 pub use fund::FundApi;
 pub use sub::SubAccountApi;
 pub use wallet::WalletApi;
-

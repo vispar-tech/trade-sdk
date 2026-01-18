@@ -1,21 +1,19 @@
 use crate::bingx::traits::swap::AccountApi;
 use crate::bingx::types::ApiResponse;
 use crate::bingx::BingxClient;
+use crate::bingx::BINGX_IMPLEMENTED;
 use crate::error::Result;
 use crate::http::HttpClient;
 use async_trait::async_trait;
-use std::collections::HashMap;
-use serde_json::Value;
 use linkme::distributed_slice;
-use crate::bingx::BINGX_IMPLEMENTED;
+use serde_json::Value;
+use std::collections::HashMap;
 
 #[distributed_slice(BINGX_IMPLEMENTED)]
 static GET_SPOT_ACCOUNT_ASSETS: &str = "get_spot_account_assets";
 
 #[distributed_slice(BINGX_IMPLEMENTED)]
 static GET_ACCOUNT_ASSET_OVERVIEW: &str = "get_account_asset_overview";
-
-
 
 #[async_trait]
 impl AccountApi for BingxClient {

@@ -24,7 +24,6 @@ pub static SET_MARGIN_MODE: &'static str = "set_margin_mode";
 
 #[async_trait]
 impl AccountApi for BybitClient {
-
     async fn get_wallet_balance(
         &self,
         account_type: Option<AccountType>,
