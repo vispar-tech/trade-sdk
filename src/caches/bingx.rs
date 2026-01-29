@@ -4,18 +4,21 @@ use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 use super::super::caches::ClientsCache;
-use crate::client::BingxClient;
+use crate::bingx::BingxClient;
 use crate::error::Result;
 
-/// Type alias for the unique cache key for BingX clients.  
-/// Format: (api_key, api_secret, demo)
-pub type BingxCacheKey = (String, String, bool);
+/// Type alias for the unique cache key for Bingx clients.
+/// Format: (api_key, api_secret, demo, testnet)
+pub type BingxCacheKey = (String, String, bool, bool);
 
-/// Global BingX client cache (thread-safe, shared by all).
-static BINGX_CACHE: Lazy<RwLock<HashMap<BingxCacheKey, (Arc<BingxClient>, Instant)>>> =
+/// Type alias for the type stored in the Bingx client cache.
+type BingxCacheValue = (Arc<BingxClient>, Instant);
+
+/// Global Bingx client cache (thread-safe, shared by all).
+static BINGX_CACHE: Lazy<RwLock<HashMap<BingxCacheKey, BingxCacheValue>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
-/// Default cache entry lifetime for BingX client cache.
+/// Default cache entry lifetime for Bingx client cache.
 static BINGX_CACHE_LIFETIME: Lazy<RwLock<Duration>> =
     Lazy::new(|| RwLock::new(Duration::from_secs(600))); // 10 minutes
 
@@ -39,22 +42,25 @@ impl ClientsCache<BingxCacheKey, BingxClient> for BingxClientsCache {
 /// # Arguments
 /// * `api_key` - API key as Into<String>
 /// * `api_secret` - API secret as Into<String>
+/// * `testnet` - Use Bingx testnet
 /// * `demo` - Use demo mode
 #[inline]
 fn make_key(
     api_key: impl Into<String>,
     api_secret: impl Into<String>,
+    testnet: bool,
     demo: bool,
-) -> (String, String, bool) {
-    (api_key.into(), api_secret.into(), demo)
+) -> (String, String, bool, bool) {
+    (api_key.into(), api_secret.into(), demo, testnet)
 }
 
 impl BingxClientsCache {
     /// Fetch a BingxClient from the cache, or create and insert one if missing.
     ///
     /// # Arguments
-    /// * `api_key` - The BingX API key (consumed as String)
-    /// * `api_secret` - The BingX API secret (consumed as String)
+    /// * `api_key` - The Bingx API key (consumed as String)
+    /// * `api_secret` - The Bingx API secret (consumed as String)
+    /// * `testnet` - Whether to use Bingx testnet API
     /// * `demo` - Whether to use demo mode for client
     ///
     /// # Returns
@@ -63,9 +69,10 @@ impl BingxClientsCache {
     pub fn get_or_create(
         api_key: impl Into<String>,
         api_secret: impl Into<String>,
+        testnet: bool,
         demo: bool,
     ) -> Result<Arc<BingxClient>> {
-        let key = make_key(api_key, api_secret, demo);
+        let key = make_key(api_key, api_secret, demo, testnet);
 
         if let Some(client) = <Self as ClientsCache<BingxCacheKey, BingxClient>>::get(&key) {
             return Ok(client);
@@ -88,13 +95,15 @@ impl BingxClientsCache {
     /// # Arguments
     /// * `api_key` - API key as &str
     /// * `api_secret` - API secret as &str
+    /// * `testnet` - Use Bingx testnet
     /// * `demo` - Use demo mode
     pub fn get(
         api_key: &str,
         api_secret: &str,
+        testnet: bool,
         demo: bool,
     ) -> Option<Arc<BingxClient>> {
-        let key = make_key(api_key, api_secret, demo);
+        let key = make_key(api_key, api_secret, demo, testnet);
         <Self as ClientsCache<BingxCacheKey, BingxClient>>::get(&key)
     }
 
@@ -104,14 +113,16 @@ impl BingxClientsCache {
     /// * `client` - Arc-wrapped BingxClient to insert
     /// * `api_key` - API key as &str
     /// * `api_secret` - API secret as &str
+    /// * `testnet` - Use Bingx testnet
     /// * `demo` - Use demo mode
     pub fn add(
         client: Arc<BingxClient>,
         api_key: &str,
         api_secret: &str,
+        testnet: bool,
         demo: bool,
     ) {
-        let key = make_key(api_key, api_secret, demo);
+        let key = make_key(api_key, api_secret, demo, testnet);
         <Self as ClientsCache<BingxCacheKey, BingxClient>>::add(key, client);
     }
 }

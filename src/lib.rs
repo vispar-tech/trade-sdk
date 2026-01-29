@@ -26,7 +26,7 @@ mod http;
 mod session;
 mod utils;
 
-pub use caches::{BybitClientsCache, ClientsCache};
+pub use caches::{BingxClientsCache, BybitClientsCache, ClientsCache};
 pub use session::SharedSessionManager;
 
 pub use clients::bingx;

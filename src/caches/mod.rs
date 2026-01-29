@@ -12,8 +12,8 @@ use tokio::task::JoinHandle;
 
 mod bybit;
 pub use bybit::BybitClientsCache;
-// mod bingx;
-// pub use bingx::BingxClientsCache;
+mod bingx;
+pub use bingx::BingxClientsCache;
 
 /// Type alias for the cache type used by all client caches.
 type ClientCacheMap<K, C> = HashMap<K, (Arc<C>, Instant)>;
