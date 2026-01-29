@@ -55,7 +55,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-trade-sdk = "0.1.0"
+trade-sdk = "0.2.0"
 ```
 
 ## Quick Start
