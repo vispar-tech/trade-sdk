@@ -12,26 +12,25 @@ permissions:
   id-token: write
 
 jobs:
-  release:
-    environment: release
+  release-plz:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: release
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        command: [release, release-pr]
+    concurrency:
+      group: release-plz-${{ matrix.command }}-${{ github.ref }}
+      cancel-in-progress: false
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Cargo
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run release-plz
-        uses: MarcoIeni/release-plz-action@v0.6
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: release-plz/action@v0.5
+        with:
+          command: ${{ matrix.command }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        with:
-          command: release-pr-and-release
-          update_changelog: false
