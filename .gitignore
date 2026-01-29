@@ -31,3 +31,5 @@ python-reference
 # Python virtual environment
 .venv
 venv
+
+.cursor
