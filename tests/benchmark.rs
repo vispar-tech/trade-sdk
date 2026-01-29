@@ -42,10 +42,7 @@ impl CacheBenchmarks {
                 BybitClient::new(Some(api_key), Some(api_secret), true, false, 5000, None).unwrap();
             clients.push(client);
         }
-        let elapsed = elapsed_ms(start);
-        // In real Python, would close clients here.
-        // for client in clients { client.close().await; }
-        elapsed
+        elapsed_ms(start)
     }
 
     /// Time direct client creation without cache (parallel with gather).
@@ -56,10 +53,7 @@ impl CacheBenchmarks {
         }
         let start = start_timer();
         let _ = futures::future::join_all((0..CLIENTS_COUNT).map(create_client)).await;
-        let elapsed = elapsed_ms(start);
-        // In real Python, would close clients here.
-        // for client in &clients { client.close().await; }
-        elapsed
+        elapsed_ms(start)
     }
 
     /// Time cache get_or_create (cold cache, sequential).
@@ -73,9 +67,7 @@ impl CacheBenchmarks {
                 BybitClientsCache::get_or_create(api_key, api_secret, true, false).unwrap();
             clients.push(client);
         }
-        let elapsed = elapsed_ms(start);
-        // In real Python, would close clients here.
-        elapsed
+        elapsed_ms(start)
     }
 
     /// Time cache get_or_create (cold cache, parallel with gather).
@@ -87,9 +79,7 @@ impl CacheBenchmarks {
         }
         let start = start_timer();
         let _ = futures::future::join_all((0..CLIENTS_COUNT).map(get_or_create_client)).await;
-        let elapsed = elapsed_ms(start);
-        // In real Python, would close clients here.
-        elapsed
+        elapsed_ms(start)
     }
 
     /// Time cache get (warm cache, sequential).
@@ -104,12 +94,10 @@ impl CacheBenchmarks {
         for i in 0..CLIENTS_COUNT {
             let (api_key, api_secret) = make_credentials(i, "cache_warm");
             let client = BybitClientsCache::get(&api_key, &api_secret, true, false)
-                .expect(&format!("Cache miss for client {}", i));
+                .unwrap_or_else(|| panic!("Cache miss for client {}", i));
             clients.push(client);
         }
-        let elapsed = elapsed_ms(start);
-        // In real Python, would close clients here.
-        elapsed
+        elapsed_ms(start)
     }
 
     /// Time cache get (warm cache, parallel with gather).
@@ -122,13 +110,11 @@ impl CacheBenchmarks {
         async fn get_client(i: usize) -> Arc<BybitClient> {
             let (api_key, api_secret) = make_credentials(i, "cache_warm_gather");
             BybitClientsCache::get(&api_key, &api_secret, true, false)
-                .expect(&format!("Cache miss for client {}", i))
+                .unwrap_or_else(|| panic!("Cache miss for client {}", i))
         }
         let start = start_timer();
         let _ = futures::future::join_all((0..CLIENTS_COUNT).map(get_client)).await;
-        let elapsed = elapsed_ms(start);
-        // In real Python, would close clients here.
-        elapsed
+        elapsed_ms(start)
     }
 }
 

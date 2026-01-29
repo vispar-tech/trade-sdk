@@ -70,7 +70,7 @@ async fn benchmark_bybitclient_get_server_time() {
     );
     println!("Requests per second: {:.4}", NUM_REQUESTS as f64 / elapsed);
 
-    if let Some(response) = results.get(0) {
+    if let Some(response) = results.first() {
         println!("\nSample response:");
         // Expecting retCode, and result: { timeSecond, timeNano }
         if let Ok(json) = serde_json::to_value(response.result.clone()) {

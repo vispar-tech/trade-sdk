@@ -1,5 +1,7 @@
 # trade-sdk
 
+[![Crates.io](https://img.shields.io/crates/v/trade-sdk)](https://crates.io/crates/trade-sdk) [![CI](https://github.com/vispar-tech/trade-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/vispar-tech/trade-sdk/actions/workflows/ci.yml) [![Release](https://github.com/vispar-tech/trade-sdk/actions/workflows/release.yml/badge.svg)](https://github.com/vispar-tech/trade-sdk/actions/workflows/release.yml)
+
 High-performance async trading API client for Rust supporting BingX and Bybit exchanges with intelligent session and cache management.
 
 ## Architecture

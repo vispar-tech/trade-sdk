@@ -37,7 +37,6 @@ async fn benchmark_bybitclient_multiclient_get_server_time() {
     // For each client, spawn a separate async task for its requests
     for (client_idx, client) in clients.iter().enumerate() {
         let client = Arc::clone(client);
-        let client_idx = client_idx; // For move in async block
         let handle = tokio::spawn(async move {
             let mut results = Vec::with_capacity(REQUESTS_PER_CLIENT);
             let mut client_handles = Vec::new();
@@ -110,7 +109,7 @@ async fn benchmark_bybitclient_multiclient_get_server_time() {
         total_requests as f64 / elapsed
     );
 
-    if let Some(response) = all_results.get(0) {
+    if let Some(response) = all_results.first() {
         println!("\nSample response:");
         // Try to extract retCode/result/timeSecond/timeNano for display
         if let Ok(json) = serde_json::to_value(response.result.clone()) {

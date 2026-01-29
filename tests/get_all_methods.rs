@@ -15,7 +15,7 @@ fn pretty_print_methods(
         return;
     }
     let cols = 2;
-    let rows = (methods.len() + cols - 1) / cols;
+    let rows = methods.len().div_ceil(cols);
     let maxlen = methods.iter().map(|m| m.len()).max().unwrap_or(0) + 2;
     for r in 0..rows {
         for c in 0..cols {
