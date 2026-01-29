@@ -1,9 +1,9 @@
 name: release-plz
 
 on:
-  workflow_run:
-    workflows: ["ci"]
-    types: [completed]
+  push:
+    branches: [main]
+  pull_request:
     branches: [main]
 
 permissions:
@@ -12,8 +12,31 @@ permissions:
   id-token: write
 
 jobs:
+  rust-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run cargo check
+        run: cargo check --all-targets
+
   release-plz:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: rust-checks
     environment: release
     runs-on: ubuntu-latest
     strategy:
