@@ -27,3 +27,7 @@ docs
 
 # Reference
 python-reference
+
+# Python virtual environment
+.venv
+venv

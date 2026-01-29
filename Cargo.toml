@@ -2,9 +2,19 @@
 name = "trade-sdk"
 version = "0.2.0"
 edition = "2021"
+keywords = ["rust", "trade", "api", "sdk", "async"]
+categories = ["api-bindings", "asynchronous", "web-programming::http-client", "wasm"]
+repository = "https://github.com/vispar-tech/trade-sdk"
 authors = ["Daniil Pavlovich <layred.dota2@mail.ru>"]
 description = "High-performance async trading API client for Rust"
 readme = "README.md"
+license = "MIT"
+include = [
+    "README.md",
+    "Cargo.toml",
+    "LICENSE",
+    "src/**/*.rs"
+]
 
 [dependencies]
 # HTTP client
