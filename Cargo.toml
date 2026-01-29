@@ -1,6 +1,6 @@
 [package]
 name = "trade-sdk"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 keywords = ["rust", "trade", "api", "sdk", "async"]
 categories = ["api-bindings", "asynchronous", "web-programming::http-client", "wasm"]
